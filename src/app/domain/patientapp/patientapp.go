@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/app/sdk/mid"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/app/sdk/response"
+	"github.com/nutchapon-m/agnos-backend-assignment/src/business/domain/hospitalpatientbus"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/business/domain/patientbus"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/business/sdk/order"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/business/sdk/page"
@@ -15,11 +16,12 @@ import (
 )
 
 type App struct {
-	patientBus patientbus.Business
+	patientBus         patientbus.Business
+	hospitalPatientBus hospitalpatientbus.Business
 }
 
-func NewApp(patientBus patientbus.Business) *App {
-	return &App{patientBus: patientBus}
+func NewApp(patientBus patientbus.Business, hospitalPatientBus hospitalpatientbus.Business) *App {
+	return &App{patientBus: patientBus, hospitalPatientBus: hospitalPatientBus}
 }
 
 func (a *App) Create(c *gin.Context) {
@@ -71,7 +73,18 @@ func (a *App) GetByID(c *gin.Context) {
 		return
 	}
 
-	response.OK(c, toAppPatient(patient))
+	hp, err := a.hospitalPatientBus.Query(c, hospitalpatientbus.QueryFilter{PatientID: &id}, page.Page{}, hospitalpatientbus.DefaultOrderBy)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		return
+	}
+
+	patientApp := toAppPatient(patient)
+	if len(hp) > 0 {
+		patientApp.HospitalNumber = hp[len(hp)-1].HN
+	}
+
+	response.OK(c, patientApp)
 }
 
 func (a *App) Query(c *gin.Context) {

@@ -48,6 +48,15 @@ func BeginCommitRollback(log *logger.Logger, bgn sqldb.Beginner) gin.HandlerFunc
 
 		c.Set(trKey, tx)
 		c.Next()
+
+		// Handlers report failure by writing an error status through the
+		// response package, which does not touch c.Errors. Without this the
+		// deferred rollback is preempted by the commit below and a partially
+		// applied multi-write handler would be persisted.
+		if c.Writer.Status() >= http.StatusBadRequest {
+			return
+		}
+
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
 			c.JSON(http.StatusInternalServerError, gin.H{

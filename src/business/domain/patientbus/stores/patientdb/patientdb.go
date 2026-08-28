@@ -51,6 +51,7 @@ func (s *Store) Create(ctx context.Context, p patientbus.Patient) (int, error) {
 		patient.DateOfBirth,
 		patient.Gender,
 		patient.Phone,
+		patient.Email,
 		patient.CreatedAt,
 		patient.UpdatedAt,
 	}
@@ -58,8 +59,8 @@ func (s *Store) Create(ctx context.Context, p patientbus.Patient) (int, error) {
 	var id int
 	query := `
 	INSERT INTO patients(id, national_id, passport_no, first_name_th, middle_name_th, last_name_th,
-		first_name_en, middle_name_en, last_name_en, date_of_birth, gender, phone, created_at, updated_at)
-	VALUES (nextval('patients_id_seq'), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		first_name_en, middle_name_en, last_name_en, date_of_birth, gender, phone, email, created_at, updated_at)
+	VALUES (nextval('patients_id_seq'), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 	RETURNING id;
 	`
 	if err := s.db.QueryRowxContext(ctx, query, args...).Scan(&id); err != nil {
@@ -74,7 +75,7 @@ func (s *Store) Create(ctx context.Context, p patientbus.Patient) (int, error) {
 func (s *Store) GetByID(ctx context.Context, id int) (patientbus.Patient, error) {
 	query := `
 	SELECT id, national_id, passport_no, first_name_th, middle_name_th, last_name_th,
-		first_name_en, middle_name_en, last_name_en, date_of_birth, gender, phone,
+		first_name_en, middle_name_en, last_name_en, date_of_birth, gender, phone, email,
 		created_at, updated_at, deleted_at
 	FROM patients
 	WHERE id = $1 AND deleted_at IS NULL`
@@ -140,6 +141,7 @@ func (s *Store) Update(ctx context.Context, p patientbus.Patient) error {
 		date_of_birth = :date_of_birth,
 		gender = :gender,
 		phone = :phone,
+		email = :email,
 		updated_at = :updated_at
 	WHERE id = :id AND deleted_at IS NULL;
 	`

@@ -15,6 +15,11 @@ func (s *Store) applyFilters(filter userbus.QueryFilter, data map[string]any, bu
 		wc = append(wc, "id = :id")
 	}
 
+	if filter.Username != nil {
+		data["username"] = filter.Username
+		wc = append(wc, "username = :username")
+	}
+
 	// Default where clause to exclude deleted records
 	wc = append(wc, "deleted_at IS NULL")
 

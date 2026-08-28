@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var errStore = errors.New("store failure")
@@ -110,7 +111,9 @@ func TestApp_Create(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		store := userdb.NewStoreMock()
 		store.On("Create", mock.Anything, mock.MatchedBy(func(u userbus.User) bool {
-			return u.Username == "gopher" && u.Password == "secret1"
+			// The business hashes the password before it reaches the store.
+			return u.Username == "gopher" &&
+				bcrypt.CompareHashAndPassword([]byte(u.Password), []byte("secret1")) == nil
 		})).Return(42, nil).Once()
 
 		w, env := do(t, newTestRouter(store), http.MethodPost, "/api/v1/user",

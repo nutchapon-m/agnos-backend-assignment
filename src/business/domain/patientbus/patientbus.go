@@ -67,6 +67,7 @@ func (bus *business) Create(ctx context.Context, np NewPatient) (Patient, error)
 		DateOfBirth:  np.DateOfBirth,
 		Gender:       np.Gender,
 		Phone:        np.Phone,
+		Email:        np.Email,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}

@@ -21,6 +21,7 @@ type Patient struct {
 	DateOfBirth  time.Time
 	Gender       string
 	Phone        string
+	Email        string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -37,4 +38,5 @@ type NewPatient struct {
 	DateOfBirth  time.Time
 	Gender       string
 	Phone        string
+	Email        string
 }

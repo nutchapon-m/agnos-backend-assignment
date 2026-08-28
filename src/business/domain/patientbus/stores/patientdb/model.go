@@ -19,6 +19,7 @@ type patient struct {
 	DateOfBirth  *time.Time `db:"date_of_birth"`
 	Gender       *string    `db:"gender"`
 	Phone        *string    `db:"phone"`
+	Email        *string    `db:"email"`
 	CreatedAt    time.Time  `db:"created_at"`
 	UpdatedAt    time.Time  `db:"updated_at"`
 	DeletedAt    *time.Time `db:"deleted_at"`
@@ -38,6 +39,7 @@ func toDBPatient(p patientbus.Patient) patient {
 		DateOfBirth:  toDBNullTime(p.DateOfBirth),
 		Gender:       toDBNullString(p.Gender),
 		Phone:        toDBNullString(p.Phone),
+		Email:        toDBNullString(p.Email),
 		CreatedAt:    p.CreatedAt,
 		UpdatedAt:    p.UpdatedAt,
 	}
@@ -57,6 +59,7 @@ func toPatient(p patient) patientbus.Patient {
 		DateOfBirth:  toBusTime(p.DateOfBirth),
 		Gender:       toBusString(p.Gender),
 		Phone:        toBusString(p.Phone),
+		Email:        toBusString(p.Email),
 		CreatedAt:    p.CreatedAt,
 		UpdatedAt:    p.UpdatedAt,
 	}

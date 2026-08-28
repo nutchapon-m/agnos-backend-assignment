@@ -3,6 +3,10 @@
 Generated from [000001_init-tables.up.sql](../src/business/sdk/migrate/sql/000001_init-tables.up.sql).
 Keep this file in step with the migration whenever the schema changes.
 
+- **Tables**: 6 (`users`, `hospitals`, `patients`, `staffs`, `hospital_patients`,
+  `hospital_staffs`), all created by a single migration
+- **Last reviewed**: 2026-08-28
+
 ## Diagram
 
 ```mermaid
@@ -45,7 +49,8 @@ erDiagram
         varchar last_name_en "100, nullable"
         date date_of_birth "nullable"
         varchar gender "1, CHECK in (M, F)"
-        varchar phone "32, nullable"
+        varchar phone "32, nullable, exposed as phone_number"
+        varchar email "255, nullable, no unique index"
         timestamptz created_at "NOT NULL, default now()"
         timestamptz updated_at "NOT NULL, default now()"
         timestamptz deleted_at "soft delete marker"
@@ -137,6 +142,7 @@ referenced parent is rejected while children exist.
 | gender check | `gender IN ('M','F')` | `NULL` is still allowed. |
 | `uq_patients_national_id` | unique on `national_id` where `national_id IS NOT NULL AND deleted_at IS NULL` | One live patient per national id; patients identified only by passport are exempt. |
 | `idx_patients_deleted_at` | partial on `deleted_at` | Live-row marker index. |
+| — | `passport_no`, `phone`, `email`, all six name columns | No index and no uniqueness, although `GET /patient/search` filters on every one of them. See note 8. |
 
 ### staffs
 | Object | Definition | Purpose |
@@ -156,6 +162,7 @@ referenced parent is rejected while children exist.
 | `uq_hospital_patients_pair` | unique on `(hospital_id, patient_id)` where `deleted_at IS NULL` | A patient is registered at a hospital at most once. |
 | `idx_hospital_patients_patient` | on `patient_id` | Supports "which hospitals know this patient". |
 | `idx_hospital_patients_deleted_at` | partial on `deleted_at` | Live-row marker index. |
+| — | `status` | `NOT NULL DEFAULT 'active'` with **no** `CHECK`, unlike `patients.gender` and `hospital_staffs.role`. Any 20-character string is accepted. |
 
 ### hospital_staffs
 | Object | Definition | Purpose |
@@ -197,3 +204,13 @@ referenced parent is rejected while children exist.
 7. **Patient identity is loose by design.** Both `national_id` and `passport_no` are
    nullable and only `national_id` is unique, which allows foreign patients while
    admitting duplicates identified solely by passport.
+8. **The patient search path is unindexed.** `patientdb.applyFilters` builds
+   `lower(first_name_th) = lower(:v) OR lower(first_name_en) = lower(:v)` for each name
+   part and `lower(email) = lower(:email)`, and matches `phone` and `passport_no`
+   directly. None of those columns carries an index, and the two `lower(...)`
+   comparisons need *expression* indexes, so every search is a sequential scan over
+   live patients. The fix is a set of partial expression indexes, e.g.
+   `CREATE INDEX ON patients (lower(last_name_th)) WHERE deleted_at IS NULL`.
+9. **`patients.email` exists in the table but in no constraint.** Unlike
+   `staffs.email` it is neither unique nor indexed, so two live patients may share an
+   address — deliberate for family accounts, but worth stating rather than inheriting.

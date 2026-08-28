@@ -3,7 +3,9 @@ package staffapp
 import (
 	"time"
 
+	"github.com/nutchapon-m/agnos-backend-assignment/src/business/domain/hospitalstaffbus"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/business/domain/staffbus"
+	"github.com/nutchapon-m/agnos-backend-assignment/src/business/domain/userbus"
 )
 
 var (
@@ -46,22 +48,80 @@ func toAppStaffs(staffs []staffbus.Staff) []Staff {
 	return items
 }
 
-type NewStaff struct {
-	UserID       int    `json:"user_id" binding:"required,gt=0"`
-	EmployeeCode string `json:"employee_code" binding:"required,max=32"`
-	FirstName    string `json:"first_name" binding:"required,max=32"`
-	LastName     string `json:"last_name" binding:"required,max=32"`
-	Email        string `json:"email" binding:"omitempty,email,max=255"`
-	LicenseNo    string `json:"license_no" binding:"omitempty,max=64"`
+// NewRegistration is the POST /staff/create body. One request creates the
+// login user, the staff record that belongs to it, and the staff's assignment
+// to a hospital.
+type NewRegistration struct {
+	Username   string `json:"username" binding:"required,min=3,max=255"`
+	Password   string `json:"password" binding:"required,min=6"`
+	HospitalID int    `json:"hospital" binding:"required,gt=0"`
 }
 
-func toNewStaff(ns NewStaff) staffbus.NewStaff {
+func toNewUser(nr NewRegistration) userbus.NewUser {
+	return userbus.NewUser{
+		Username: nr.Username,
+		Password: nr.Password,
+	}
+}
+
+// toNewStaff builds the staff record for a freshly created user. The request
+// carries no staff details, so employee_code is seeded from the username: the
+// column is NOT NULL under a unique index, and username is the only unique
+// value the request supplies. The names are left blank for a later update.
+func toNewStaff(nr NewRegistration, userID int) staffbus.NewStaff {
 	return staffbus.NewStaff{
-		UserID:       ns.UserID,
-		EmployeeCode: ns.EmployeeCode,
-		FirstName:    ns.FirstName,
-		LastName:     ns.LastName,
-		Email:        ns.Email,
-		LicenseNo:    ns.LicenseNo,
+		UserID:       userID,
+		EmployeeCode: nr.Username,
+	}
+}
+
+// Registration is what the create flow returns. The user is represented by
+// Staff.UserID; the password never leaves the business layer.
+type Registration struct {
+	Staff      Staff  `json:"staff"`
+	HospitalID int    `json:"hospital_id"`
+	Role       string `json:"role"`
+}
+
+func toRegistration(s staffbus.Staff, hs hospitalstaffbus.HospitalStaff) Registration {
+	return Registration{
+		Staff:      toAppStaff(s),
+		HospitalID: hs.HospitalID,
+		Role:       hs.Role,
+	}
+}
+
+// LoginStaff is the POST /staff/login body. A staff member logs in against one
+// hospital: the credentials alone are not enough, the account must also hold an
+// active assignment to that hospital.
+type LoginStaff struct {
+	Username   string `json:"username" binding:"required,min=3,max=255"`
+	Password   string `json:"password" binding:"required,min=6"`
+	HospitalID int    `json:"hospital" binding:"required,gt=0"`
+}
+
+// Authentication is what a successful login returns. It carries the identity
+// the caller authenticated as and the hospital context it is valid for.
+type Authentication struct {
+	Authenticate bool   `json:"authenticate"`
+	UserID       int    `json:"user_id"`
+	StaffID      int    `json:"staff_id"`
+	EmployeeCode string `json:"employee_code"`
+	FirstName    string `json:"first_name"`
+	LastName     string `json:"last_name"`
+	HospitalID   int    `json:"hospital_id"`
+	Role         string `json:"role"`
+}
+
+func toAuthentication(s staffbus.Staff, hs hospitalstaffbus.HospitalStaff) Authentication {
+	return Authentication{
+		Authenticate: true,
+		UserID:       s.UserID,
+		StaffID:      s.ID,
+		EmployeeCode: s.EmployeeCode,
+		FirstName:    s.FirstName,
+		LastName:     s.LastName,
+		HospitalID:   hs.HospitalID,
+		Role:         hs.Role,
 	}
 }

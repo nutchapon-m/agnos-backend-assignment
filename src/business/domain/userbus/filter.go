@@ -1,8 +1,9 @@
 package userbus
 
 type QueryFilter struct {
-	ID      *int
-	OrderBy *string
-	Page    *int
-	Limit   *int
+	ID       *int
+	Username *string
+	OrderBy  *string
+	Page     *int
+	Limit    *int
 }

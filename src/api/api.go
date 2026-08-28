@@ -6,8 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/app/domain/hospitalapp"
-	"github.com/nutchapon-m/agnos-backend-assignment/src/app/domain/hospitalpatientapp"
-	"github.com/nutchapon-m/agnos-backend-assignment/src/app/domain/hospitalstaffapp"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/app/domain/patientapp"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/app/domain/staffapp"
 	"github.com/nutchapon-m/agnos-backend-assignment/src/app/domain/userapp"
@@ -50,9 +48,11 @@ func Handler(r *gin.Engine, cfg Config) http.Handler {
 	})
 
 	staffapp.Routes(r, staffapp.Config{
-		Log:      cfg.Log,
-		DB:       cfg.DB,
-		StaffBus: cfg.BusConfig.StaffBus,
+		Log:              cfg.Log,
+		DB:               cfg.DB,
+		HospitalStaffBus: cfg.BusConfig.HospitalStaffBus,
+		StaffBus:         cfg.BusConfig.StaffBus,
+		UserBus:          cfg.BusConfig.UserBus,
 	})
 
 	patientapp.Routes(r, patientapp.Config{
@@ -65,18 +65,6 @@ func Handler(r *gin.Engine, cfg Config) http.Handler {
 		Log:         cfg.Log,
 		DB:          cfg.DB,
 		HospitalBus: cfg.BusConfig.HospitalBus,
-	})
-
-	hospitalpatientapp.Routes(r, hospitalpatientapp.Config{
-		Log:                cfg.Log,
-		DB:                 cfg.DB,
-		HospitalPatientBus: cfg.BusConfig.HospitalPatientBus,
-	})
-
-	hospitalstaffapp.Routes(r, hospitalstaffapp.Config{
-		Log:              cfg.Log,
-		DB:               cfg.DB,
-		HospitalStaffBus: cfg.BusConfig.HospitalStaffBus,
 	})
 
 	return r

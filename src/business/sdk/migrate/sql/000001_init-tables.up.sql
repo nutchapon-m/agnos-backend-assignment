@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS patients
     date_of_birth date,
     gender character varying(1) CHECK (gender IN ('M', 'F')),
     phone character varying(32),
+    email character varying(255),
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
     deleted_at timestamp with time zone,

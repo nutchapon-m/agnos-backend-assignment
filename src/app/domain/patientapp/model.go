@@ -13,25 +13,25 @@ var (
 )
 
 type Patient struct {
-	ID           int    `json:"id"`
-	NationalID   string `json:"national_id,omitempty"`
-	PassportNo   string `json:"passport_no,omitempty"`
-	FirstNameTH  string `json:"first_name_th,omitempty"`
-	MiddleNameTH string `json:"middle_name_th,omitempty"`
-	LastNameTH   string `json:"last_name_th,omitempty"`
-	FirstNameEN  string `json:"first_name_en,omitempty"`
-	MiddleNameEN string `json:"middle_name_en,omitempty"`
-	LastNameEN   string `json:"last_name_en,omitempty"`
-	DateOfBirth  string `json:"date_of_birth,omitempty"`
-	Gender       string `json:"gender,omitempty"`
-	Phone        string `json:"phone,omitempty"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
+	NationalID     string `json:"national_id,omitempty"`
+	PassportNo     string `json:"passport_no,omitempty"`
+	FirstNameTH    string `json:"first_name_th,omitempty"`
+	MiddleNameTH   string `json:"middle_name_th,omitempty"`
+	LastNameTH     string `json:"last_name_th,omitempty"`
+	FirstNameEN    string `json:"first_name_en,omitempty"`
+	MiddleNameEN   string `json:"middle_name_en,omitempty"`
+	LastNameEN     string `json:"last_name_en,omitempty"`
+	DateOfBirth    string `json:"date_of_birth,omitempty"`
+	HospitalNumber string `json:"patient_hn,omitempty"`
+	Gender         string `json:"gender,omitempty"`
+	Phone          string `json:"phone_number,omitempty"`
+	Email          string `json:"email,omitempty"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
 }
 
 func toAppPatient(p patientbus.Patient) Patient {
 	return Patient{
-		ID:           p.ID,
 		NationalID:   p.NationalID,
 		PassportNo:   p.PassportNo,
 		FirstNameTH:  p.FirstNameTH,
@@ -43,6 +43,7 @@ func toAppPatient(p patientbus.Patient) Patient {
 		DateOfBirth:  formatDate(p.DateOfBirth),
 		Gender:       p.Gender,
 		Phone:        p.Phone,
+		Email:        p.Email,
 		CreatedAt:    p.CreatedAt.Format(isoLayout),
 		UpdatedAt:    p.UpdatedAt.Format(isoLayout),
 	}
@@ -67,7 +68,8 @@ type NewPatient struct {
 	LastNameEN   string `json:"last_name_en" binding:"omitempty,max=100"`
 	DateOfBirth  string `json:"date_of_birth" binding:"omitempty,datetime=2006-01-02"`
 	Gender       string `json:"gender" binding:"omitempty,oneof=M F"`
-	Phone        string `json:"phone" binding:"omitempty,max=32"`
+	Phone        string `json:"phone_number" binding:"omitempty,max=32"`
+	Email        string `json:"email" binding:"omitempty,email,max=255"`
 }
 
 func toNewPatient(np NewPatient) (patientbus.NewPatient, error) {
@@ -88,6 +90,7 @@ func toNewPatient(np NewPatient) (patientbus.NewPatient, error) {
 		DateOfBirth:  dob,
 		Gender:       np.Gender,
 		Phone:        np.Phone,
+		Email:        np.Email,
 	}
 	return patient, nil
 }

@@ -38,6 +38,7 @@ type Business interface {
 	GetByID(ctx context.Context, id int) (HospitalStaff, error)
 	Query(ctx context.Context, filter QueryFilter, pg page.Page, orderBy order.By) ([]HospitalStaff, error)
 	Delete(ctx context.Context, id int) error
+	RegisterStaff(ctx context.Context, hospitalID, staffID int) (HospitalStaff, error)
 }
 
 type business struct {
@@ -125,4 +126,32 @@ func (bus *business) Delete(ctx context.Context, id int) error {
 		return ErrUnexpected
 	}
 	return nil
+}
+
+func (bus *business) RegisterStaff(ctx context.Context, hospitalID, staffID int) (HospitalStaff, error) {
+	now := time.Now()
+
+	hospitalStaff := HospitalStaff{
+		HospitalID:    hospitalID,
+		StaffID:       staffID,
+		Role:          RoleRegistrar,
+		IsPrimary:     true,
+		EffectiveFrom: now,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	id, err := bus.store.Create(ctx, hospitalStaff)
+	if err != nil {
+		bus.log.Error(ctx, "create hospital staff error", "err", err)
+		switch {
+		case errors.Is(err, sqldb.ErrDBDuplicatedEntry):
+			return HospitalStaff{}, ErrDuplicate
+		case errors.Is(err, sqldb.ErrDBForeignKeyViolation):
+			return HospitalStaff{}, ErrInvalidReference
+		}
+		return HospitalStaff{}, err
+	}
+	hospitalStaff.ID = id
+	return hospitalStaff, nil
 }
