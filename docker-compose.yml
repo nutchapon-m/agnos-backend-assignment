@@ -1,0 +1,14 @@
+services:
+  nginx:
+    image: nginx
+    
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api_con
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    command: ["./app-api", "--migration=true"]
