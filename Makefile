@@ -1,5 +1,5 @@
 # --- Configuration ---
-MIGRATIONS_DIR ?= ./business/sdk/migrate/sql
+MIGRATIONS_DIR ?= ./src/business/sdk/migrate/sql
 DATABASE_URL ?= postgres://username:password@localhost:5432/dbname?sslmode=disable
 
 ifneq (,$(wildcard .env))
@@ -7,47 +7,20 @@ ifneq (,$(wildcard .env))
 	export $(shell sed 's/=.*//' .env)
 endif
 
-.PHONY: alert rule build
+.PHONY: alert rule build migrate-create migrate-up migrate-down migrate-force migrate-step test test-integration
 
-run:
-	go run api/services/app/main.go \
-	--service-name=tgms-ingest-bridge \
-	--migration=true \
-	--port=9999
-
-bridge:
-	go run api/services/bridge/main.go \
-	--service-name=tgms-ingest-bridge \
-	--exchange=tgms_telemetry_fanout \
-	--exchange-type=fanout \
-	--queue=tgms_telemetry \
-	--binding-key=swd.dgr.*.telemetry
-
-writer:
-	go run api/services/writer/main.go \
-	--service-name=tgms-ingest-writers \
-	--exchange=tgms_telemetry_fanout \
-	--exchange-type=fanout \
-	--queue=tgms_telemetry \
-	--binding-key=swd.dgr.*.telemetry
-
-telemetryapp-proto-gen:
-	protoc --go_out=app/domain/grpctelemetryapp --go_opt=paths=source_relative \
-		--go-grpc_out=app/domain/grpctelemetryapp --go-grpc_opt=paths=source_relative \
-		--proto_path=app/domain/grpctelemetryapp \
-		app/domain/grpctelemetryapp/telemetryapp.proto
+run: 
+	@go run src/main.go
 
 build:
-	go build -o bin/alert ./api/services/bridge/main.go
-	go build -o bin/rule ./api/services/writer/main.go
+	@go build ./...
 
-worker:
-	go run api/services/worker/main.go \
-		--service-name=tgms-ingest-worker \
-		--exchange=tgms.events \
-		--exchange-type=topic \
-		--queue=tgms.ingest.events \
-		--binding-key=core.device.#
+test:
+	@go build ./... && go vet ./... && go test ./... -count=1
+
+test-integration:
+	@DATABASE_URL="$(DATABASE_URL)" go test ./repository/... -count=1 -v
+
 
 # --- Migration Commands ---
 migrate-create:
